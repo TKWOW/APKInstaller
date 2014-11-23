@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<items version="2" >
+
+    <item
+        jar="/CODES/AndroidEnv/adt-bundle-mac-x86_64-20140702/sdk/extras/android/m2repository/com/android/support/support-v4/19.1.0/support-v4-19.1.0.jar"
+        jumboMode="false"
+        revision="20.0.0"
+        sha1="85f201b380937e61a9dce6ca90ccf6872abbfb67">
+        <dex dex="/CODES/APKBrowser/apkbrowser/build/intermediates/pre-dexed/debug/support-v4-19.1.0-fc22179f91704aa09db55eb4b227bbb3153e259d.jar" />
+    </item>
+
+</items>
