@@ -25,6 +25,7 @@ public class DownloadProgressPopup {
     private Cursor mCursor;
     private IDownloadProgressHandler mHandler;
     private boolean mIsShown;
+    public void setHandler(IDownloadProgressHandler handler) {mHandler = handler;}
     public void show(Context context, View anchor, final long downloadID, IDownloadProgressHandler handler) {
         if (mPopup != null) mPopup = null;
         mIsShown = true;
@@ -69,6 +70,9 @@ public class DownloadProgressPopup {
             mPopup.dismiss();
             mPopup = null;
             mIsShown = false;
+            if (mHandler != null) {
+                mHandler.onProgressDismiss();
+            }
         }
     }
 
@@ -112,5 +116,6 @@ public class DownloadProgressPopup {
 
     public interface IDownloadProgressHandler {
         public void onDownloadProgressComplete(String localPath);
+        public void onProgressDismiss();
     }
 }

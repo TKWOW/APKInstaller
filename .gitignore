@@ -1,0 +1,5 @@
+.gradle
+.idea
+APKBrowser.iml
+APKInstaller.iml
+local.properties

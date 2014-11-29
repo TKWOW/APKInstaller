@@ -9,8 +9,9 @@ public class FileEntity {
     public String fileName;
     public String filePath;
     public Integer  isDirectory;
-    public Integer  downloadStatus;
-    public Long     downloadID;
+    public Integer  downloadStatus = new Integer(0);
+    public Long     downloadID = new Long(0);
+
     @Override
     public String toString() {
         return fileName;

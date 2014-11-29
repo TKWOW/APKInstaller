@@ -4,6 +4,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
@@ -51,13 +52,19 @@ public class FileListAdapter extends SimpleCursorAdapter{
             rl.findViewById(R.id.file_download).setVisibility(View.GONE);
         } else {
             ((ImageView)(rl.findViewById(R.id.file_type))).setImageResource(R.drawable.sbm);
-            View download = rl.findViewById(R.id.file_download);
+            Button download = (Button)rl.findViewById(R.id.file_download);
             download.setVisibility(View.VISIBLE);
+            if (cursor.getInt(cursor.getColumnIndex(FileDataBase.DOWNLOAD_STATUS)) == 2) {
+                download.setText("Install");
+            } else {
+                download.setText("Download");
+            }
             final int position = cursor.getPosition();
             download.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     mHandler.onClick(position);
+                    ((Button)view).setText("Downloading ...");
                 }
             });
 

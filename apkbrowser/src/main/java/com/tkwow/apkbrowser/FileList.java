@@ -25,12 +25,24 @@ public class FileList {
 
         mDB.beginTransaction();
         try {
-            mDB.delete(FileDataBase.TABLE_NAME, FileDataBase.FILE_PATH+"= ?", new String[]{files.get(0).filePath});
-            //mDB.delete(FileDataBase.TABLE_NAME, FileDataBase.FILE_PATH+"= ?", new String[]{"/CODES/"});
+            ArrayList<FileEntity> existFiles = query(files.get(0).filePath);
+            if (!existFiles.isEmpty()) {
+                for (FileEntity entity : files) {
+                    for (FileEntity exist : existFiles) {
+                        if (exist.fileName.equals(entity.fileName)) {
+                            entity.downloadID = exist.downloadID;
+                            entity.downloadStatus = exist.downloadStatus;
+                            break;
+                        }
+                    }
+                }
+                mDB.delete(FileDataBase.TABLE_NAME, FileDataBase.FILE_PATH+"= ?", new String[]{files.get(0).filePath});
+            }
+
             for (FileEntity file : files) {
                 mDB.execSQL("INSERT INTO " + FileDataBase.TABLE_NAME +" VALUES(null, ?, ?, ?, ?, ?)",
                         new Object[]{file.fileName, file.filePath,
-                                file.isDirectory, file.downloadStatus, 0});
+                                file.isDirectory, file.downloadStatus, file.downloadID});
             }
             mDB.setTransactionSuccessful();
         } finally {
@@ -40,17 +52,9 @@ public class FileList {
 
     public void update(FileEntity entity) {
         ContentValues cv = entity.getContents();
-        int items = mDB.update(FileDataBase.TABLE_NAME, cv, FileDataBase.FILE_PATH+"=?"+" and "+FileDataBase.FILE_NAME+"=?", new String[]{
+        mDB.update(FileDataBase.TABLE_NAME, cv, FileDataBase.FILE_PATH+"=?"+" and "+FileDataBase.FILE_NAME+"=?", new String[]{
                 entity.filePath, entity.fileName
         });
-        if (items == 0) {
-            Log.d("Test Update", "Invalid update");
-        } else {
-            FileEntity entity2 = query(entity.filePath, entity.fileName);
-            if (entity.downloadStatus == entity2.downloadStatus) {
-
-            }
-        }
     }
 
     public FileEntity query(String filePath, String fileName) {
@@ -70,8 +74,22 @@ public class FileList {
     private FileEntity createEntityWithCursor(Cursor c) {
         if (c == null || c.getCount() == 0) return null;
 
-        FileEntity file = new FileEntity();
         c.moveToFirst();
+        return createWithCursor(c);
+    }
+
+    private ArrayList<FileEntity> query(String filePath) {
+        ArrayList<FileEntity> files = new ArrayList<FileEntity>();
+        Cursor c = queryTheCursor(filePath);
+        while (c.moveToNext()) {
+            files.add(createWithCursor(c));
+        }
+        c.close();
+        return files;
+    }
+
+    private FileEntity createWithCursor(Cursor c) {
+        FileEntity file = new FileEntity();
         file.fileName = c.getString(c.getColumnIndex(FileDataBase.FILE_NAME));
         file.filePath = c.getString(c.getColumnIndex(FileDataBase.FILE_PATH));
         file.isDirectory = c.getInt(c.getColumnIndex(FileDataBase.IS_DIRECTORY));
@@ -79,20 +97,6 @@ public class FileList {
         file.downloadID = c.getLong(c.getColumnIndex(FileDataBase.DOWNLOAD_ID));
         return file;
     }
-//    public ArrayList<FileEntity> query(String filePath) {
-//        ArrayList<FileEntity> files = new ArrayList<FileEntity>();
-//        Cursor c = queryTheCursor(filePath);
-//        while (c.moveToNext()) {
-//            FileEntity file = new FileEntity();
-//            file.fileName = c.getString(c.getColumnIndex(FileDataBase.FILE_NAME));
-//            file.filePath = c.getString(c.getColumnIndex(FileDataBase.FILE_PATH));
-//            file.isDirectory = c.getInt(c.getColumnIndex(FileDataBase.IS_DIRECTORY));
-//            files.add(file);
-//        }
-//        c.close();
-//        return files;
-//    }
-
     /**
      * query all persons, return cursor
      * @return  Cursor

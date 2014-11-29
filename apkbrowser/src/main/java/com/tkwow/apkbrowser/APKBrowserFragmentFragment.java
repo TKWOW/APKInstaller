@@ -15,6 +15,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.ProgressBar;
 
 import java.io.File;
 
@@ -38,6 +39,7 @@ public class APKBrowserFragmentFragment extends Fragment implements ListView.OnI
      */
     private ListView mListView;
     private View    mEmptyView;
+    private View    mWaitingBar;
     private boolean mShouldInstall = false;
     DownloadStateReceiver mDownloadStateReceiver = null;
     DownloadProgressPopup mPopup = new DownloadProgressPopup();
@@ -91,6 +93,7 @@ public class APKBrowserFragmentFragment extends Fragment implements ListView.OnI
         mListView.setOnItemClickListener(this);
 
         mEmptyView = view.findViewById(R.id.emptyView);
+        mWaitingBar = view.findViewById(R.id.waitingBar);
         return view;
     }
 
@@ -98,7 +101,8 @@ public class APKBrowserFragmentFragment extends Fragment implements ListView.OnI
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         FileEntity entity = (FileEntity)mAdapter.getItem(position);
         if (entity.isDirectory > 0) {
-            FileExploreService.startOpen(getActivity(), mServer+entity.filePath+entity.fileName);
+            FileExploreService.startOpen(getActivity(), mServer+entity.filePath+"&"+entity.fileName);
+            mWaitingBar.setVisibility(View.VISIBLE);
         } else {
 
         }
@@ -111,10 +115,12 @@ public class APKBrowserFragmentFragment extends Fragment implements ListView.OnI
         }
 
         if (mFilePath != null && !mFilePath.equals("")) {
-            int lastIndex = mFilePath.lastIndexOf('&');
-            String filePath = "";
+            String filePath = mFilePath.replaceAll("/", "&");
+            int lastIndex = filePath.lastIndexOf('&');
             if (lastIndex != -1) {
-                filePath = mFilePath.substring(0, lastIndex);
+                filePath = filePath.substring(0, lastIndex);
+            } else {
+                filePath = "";
             }
             updateData(filePath);
             return true;
@@ -145,9 +151,6 @@ public class APKBrowserFragmentFragment extends Fragment implements ListView.OnI
             getActivity().setTitle("Root");
         } else {
             filePath = filePath.replaceAll("&", "/");
-            if (filePath.charAt(filePath.length()-1) == '/') {
-                filePath = filePath.substring(0, filePath.length()-1);
-            }
             getActivity().setTitle(filePath);
         }
         mFilePath = filePath;
@@ -175,7 +178,7 @@ public class APKBrowserFragmentFragment extends Fragment implements ListView.OnI
             }
             c.close();
         } else {
-            DownloadService.startDownload(getActivity(), mServer + "download/" + entity.filePath + entity.fileName,
+            DownloadService.startDownload(getActivity(), mServer + "download/" + entity.filePath + "&" +entity.fileName,
                     entity.filePath);
         }
     }
@@ -191,9 +194,15 @@ public class APKBrowserFragmentFragment extends Fragment implements ListView.OnI
     @Override
     public void onDownloadProgressComplete(String localPath) {
         if (mPopup != null && mPopup.isShown()) {
+            mPopup.setHandler(null);
             mPopup.dismiss();
             mShouldInstall = true;
         }
+    }
+
+    @Override
+    public void onProgressDismiss() {
+        mShouldInstall = false;
     }
 
     public static class DownloadStateReceiver extends BroadcastReceiver {
@@ -205,6 +214,7 @@ public class APKBrowserFragmentFragment extends Fragment implements ListView.OnI
             if (intent.getAction().equals(Constants.BROADCAST_FILE_OPEN)) {
                 if (extras.containsKey(Constants.EXTENDED_FILE_OPEN_STATUS)) {
                     boolean status = extras.getBoolean(Constants.EXTENDED_FILE_OPEN_STATUS);
+                    sFragment.mWaitingBar.setVisibility(View.INVISIBLE);
                     if (!status) return;
 
                     String path = extras.getString(Constants.EXTENDED_FILE_OPEN_FILE_PATH);
@@ -234,9 +244,10 @@ public class APKBrowserFragmentFragment extends Fragment implements ListView.OnI
                 if (entity != null) {
                     entity.downloadStatus = 2;
                     FileList.getInstance(context).update(entity);
+                    sFragment.updateData(entity.filePath);
                 }
 
-                if (!sFragment.mShouldInstall) return;
+                if (sFragment.mPopup == null || (!sFragment.mPopup.isShown() && !sFragment.mShouldInstall)) return;
 
                 DownloadManager downloadManager = (DownloadManager) context.getSystemService
                         (Context.DOWNLOAD_SERVICE);
