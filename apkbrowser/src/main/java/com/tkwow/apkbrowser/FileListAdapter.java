@@ -54,8 +54,11 @@ public class FileListAdapter extends SimpleCursorAdapter{
             ((ImageView)(rl.findViewById(R.id.file_type))).setImageResource(R.drawable.sbm);
             Button download = (Button)rl.findViewById(R.id.file_download);
             download.setVisibility(View.VISIBLE);
-            if (cursor.getInt(cursor.getColumnIndex(FileDataBase.DOWNLOAD_STATUS)) == 2) {
+            final int status = cursor.getInt(cursor.getColumnIndex(FileDataBase.DOWNLOAD_STATUS));
+            if (status == 2) {
                 download.setText("Install");
+            } else if (status == 1) {
+                download.setText("Downloading ...");
             } else {
                 download.setText("Download");
             }
@@ -64,7 +67,9 @@ public class FileListAdapter extends SimpleCursorAdapter{
                 @Override
                 public void onClick(View view) {
                     mHandler.onClick(position);
-                    ((Button)view).setText("Downloading ...");
+                    if (status == 0) {
+                        ((Button) view).setText("Downloading ...");
+                    }
                 }
             });
 

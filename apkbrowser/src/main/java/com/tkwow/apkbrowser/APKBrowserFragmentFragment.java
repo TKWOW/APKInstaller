@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -16,6 +17,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.Toast;
 
 import java.io.File;
 
@@ -31,7 +33,7 @@ public class APKBrowserFragmentFragment extends Fragment implements ListView.OnI
                                                             FileListAdapter.IDownloadViewClickHandler,
                                                             DownloadProgressPopup.IDownloadProgressHandler {
     private static final String ARG_SERVER = "server";
-
+    private static final String LAST_DOWNLOAD_PATH = "last_download_path";
     private String mServer;
     private String mFilePath;
     /**
@@ -64,7 +66,10 @@ public class APKBrowserFragmentFragment extends Fragment implements ListView.OnI
 
         if (getArguments() != null) {
             mServer = getArguments().getString(ARG_SERVER);
-            FileExploreService.startOpen(getActivity(), mServer);
+            String lastDownloadPath = getActivity().getPreferences(Context.MODE_PRIVATE)
+                    .getString(LAST_DOWNLOAD_PATH, "");
+            String path = mServer.concat(lastDownloadPath);
+            FileExploreService.startOpen(getActivity(), path);
 
             IntentFilter mStatusIntentFilter = new IntentFilter(Constants.BROADCAST_FILE_OPEN);
             mStatusIntentFilter.addAction(Constants.BROADCAST_FILE_DOWNLOAD);
@@ -180,6 +185,9 @@ public class APKBrowserFragmentFragment extends Fragment implements ListView.OnI
         } else {
             DownloadService.startDownload(getActivity(), mServer + "download/" + entity.filePath + "&" +entity.fileName,
                     entity.filePath);
+            SharedPreferences.Editor editor = getActivity().getPreferences(Context.MODE_PRIVATE).edit();
+            editor.putString(LAST_DOWNLOAD_PATH, entity.filePath);
+            editor.commit();
         }
     }
 
@@ -215,7 +223,10 @@ public class APKBrowserFragmentFragment extends Fragment implements ListView.OnI
                 if (extras.containsKey(Constants.EXTENDED_FILE_OPEN_STATUS)) {
                     boolean status = extras.getBoolean(Constants.EXTENDED_FILE_OPEN_STATUS);
                     sFragment.mWaitingBar.setVisibility(View.INVISIBLE);
-                    if (!status) return;
+                    if (!status) {
+                        Toast.makeText(context, "Network Error", Toast.LENGTH_LONG);
+                        return;
+                    }
 
                     String path = extras.getString(Constants.EXTENDED_FILE_OPEN_FILE_PATH);
                     sFragment.updateData(path);

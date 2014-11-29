@@ -48,7 +48,7 @@ public class DownloadProgressPopup {
             }
         });
         mPopup.setOutsideTouchable(true);
-        mPopup.setFocusable(false);
+        mPopup.setFocusable(true);
         mPopup.setBackgroundDrawable(mContext.getResources().getDrawable(R.drawable.background_blank));
         mPopup.showAtLocation(anchor, Gravity.CENTER, 0, 0);
 
